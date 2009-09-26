@@ -1,10 +1,11 @@
 package Padre::Plugin::WebGUI;
 
+use 5.008;
 use strict;
 use warnings;
 use base 'Padre::Plugin';
-use Readonly;
-use WGDev;
+use Padre::Util ('_T');
+use Padre::Plugin::WebGUI::Assets;
 
 =head1 NAME
 
@@ -12,11 +13,11 @@ Padre::Plugin::WebGUI - Developer tools for WebGUI
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01_01';
+our $VERSION = '0.02';
 
 =head1 SYNOPSIS
 
@@ -26,13 +27,13 @@ Then use it via L<Padre>, The Perl IDE.
 
 =head1 DESCRIPTION
 
-Once you enable this Plugin under Padre, you'll get a brand new "WebGUI" menu with a bunch of nifty options.
+This plugin adds a "WebGUI" item to the Padre plugin menu, with a bunch of WebGUI-oriented features.
 
 =cut
 
 # The plugin name to show in the Plugin Manager and menus
 sub plugin_name {
-    'WebGUI';
+    return _T("WebGUI");
 }
 
 # Declare the Padre interfaces this plugin uses
@@ -41,65 +42,104 @@ sub padre_interfaces {
         ;
 }
 
-# The command structure to show in the Plugins menu
-sub menu_plugins_simple {
+# Register the document types that we want to handle
+sub registered_documents {
+    'application/x-webgui-asset'        => 'Padre::Document::WebGUI::Asset',
+        'application/x-webgui-template' => 'Padre::Document::WebGUI::Asset::Template',
+        'application/x-webgui-snippet'  => 'Padre::Document::WebGUI::Asset::Snippet',
+        ;
+}
+
+sub plugin_directory_share {
     my $self = shift;
 
-    Readonly my $wreservice => 'gksudo -- /data/wre/sbin/wreservice.pl';
-    my $main = Padre->ide->wx->main;
+    my $share = $self->SUPER::plugin_directory_share;
+    return $share if $share;
 
-    my $menu = [
+    # Try this one instead (for dev version)
+    my $path = Cwd::realpath( File::Spec->join( File::Basename::dirname(__FILE__), '../../../', 'share' ) );
+    return $path if -d $path;
 
-        "WGDev Command" => [
-            map {
-                my $cmd = $_;
-                "wgd $cmd" => sub { $self->wgd_cmd($cmd) }
-                } $self->wgd_commands
-        ],
+    return;
+}
 
-        '---' => undef,
+# called when the plugin is enabled
+sub plugin_enable {
+    my $self = shift;
 
-        "WRE Services" => [
-            "Start" => [
-                'All'      => sub { $main->run_command(qq($wreservice --start all")) },
-                'Mysql'    => sub { $main->run_command(qq($wreservice --start mysql")) },
-                'Modperl'  => sub { $main->run_command(qq($wreservice --start modperl")) },
-                'Modproxy' => sub { $main->run_command(qq($wreservice --start modproxy")) },
-                'SPECTRE'  => sub { $main->run_command(qq($wreservice --start specre")) },
-            ],
-            "Stop" => [
-                'All'      => sub { $main->run_command(qq($wreservice --stop all")) },
-                'Mysql'    => sub { $main->run_command(qq($wreservice --stop mysql")) },
-                'Modperl'  => sub { $main->run_command(qq($wreservice --stop modperl")) },
-                'Modproxy' => sub { $main->run_command(qq($wreservice --stop modproxy")) },
-                'SPECTRE'  => sub { $main->run_command(qq($wreservice --stop specre")) },
-            ],
-            "Restart" => [
-                'All'      => sub { $main->run_command(qq($wreservice --restart all")) },
-                'Mysql'    => sub { $main->run_command(qq($wreservice --restart mysql")) },
-                'Modperl'  => sub { $main->run_command(qq($wreservice --restart modperl")) },
-                'Modproxy' => sub { $main->run_command(qq($wreservice --restart modproxy")) },
-                'SPECTRE'  => sub { $main->run_command(qq($wreservice --restart specre")) },
-            ],
-            "Ping" => [
-                'All'      => sub { $main->run_command(qq($wreservice --ping all")); },
-                'Mysql'    => sub { $main->run_command(qq($wreservice --ping mysql")); },
-                'Modperl'  => sub { $main->run_command(qq($wreservice --ping modperl")); },
-                'Modproxy' => sub { $main->run_command(qq($wreservice --ping modproxy")); },
-                'SPECTRE'  => sub { $main->run_command(qq($wreservice --ping specre")); },
-            ],
-        ],
+    Padre::Util::debug('Enabling Padre::Plugin::WebGUI');
 
-        '---' => undef,
+    # workaround Padre bug
+    my %registered_documents = $self->registered_documents;
+    while ( my ( $k, $v ) = each %registered_documents ) {
+        Padre::MimeTypes->add_highlighter_to_mime_type( $k, $v );
+    }
 
-        'Online Resources' => [ $self->online_resources ],
+    # Create empty config object if it doesn't exist
+    my $config = $self->config_read;
+    if ( !$config ) {
+        $self->config_write( {} );
+    }
 
-        '---' => undef,
+    return 1;
+}
 
-        "About" => sub { $self->show_about },
-    ];
+# called when the plugin is disabled/reloaded
+sub plugin_disable {
+    my $self = shift;
 
-    return $self->plugin_name => $menu;
+    Padre::Util::debug('Disabling Padre::Plugin::WebGUI');
+
+    if ( my $asset_tree = $self->{asset_tree} ) {
+        $self->main->right->hide($asset_tree);
+        delete $self->{asset_tree};
+    }
+
+    # Unload all private classese here, so that they can be reloaded
+    require Class::Unload;
+    Class::Unload->unload('Padre::Plugin::WebGUI::Assets');
+}
+
+sub menu_plugins {
+    my $self = shift;
+    my $main = shift;
+
+    $self->{menu} = Wx::Menu->new;
+
+    # Asset Tree
+    $self->{asset_tree_toggle} = $self->{menu}->AppendCheckItem( -1, _T("Show Asset Tree"), );
+    Wx::Event::EVT_MENU( $main, $self->{asset_tree_toggle}, sub { $self->toggle_asset_tree } );
+
+    # Turn on Asset Tree as soon as Plugin is enabled
+    # Todo - find a better place to put this
+    if ( $self->config_read->{show_asset_tree} ) {
+        $self->{asset_tree_toggle}->Check(1);
+        $self->toggle_asset_tree;
+    }
+
+    # Online Resources
+    my $resources_submenu = Wx::Menu->new;
+    my %resources         = $self->online_resources;
+    while ( my ( $name, $resource ) = each %resources ) {
+        Wx::Event::EVT_MENU( $main, $resources_submenu->Append( -1, $name ), $resource, );
+    }
+    $self->{menu}->Append( -1, _T("Online Resources"), $resources_submenu );
+
+    # About
+    Wx::Event::EVT_MENU( $main, $self->{menu}->Append( -1, _T("About"), ), sub { $self->show_about }, );
+
+    # --
+    $self->{menu}->AppendSeparator;
+
+    # Reload (handy when developing this plugin)
+    Wx::Event::EVT_MENU(
+        $main,
+        $self->{menu}->Append( -1, _T("Reload WebGUI Plugin\tCtrl+Shift+R"), ),
+        sub { $main->ide->plugin_manager->reload_current_plugin },
+    );
+
+    # Return our plugin with its label
+    return ( $self->plugin_name => $self->{menu} );
 }
 
 sub online_resources {
@@ -135,33 +175,6 @@ sub online_resources {
     return map { $_ => $RESOURCES{$_} } sort { $a cmp $b } keys %RESOURCES;
 }
 
-sub wgd_commands {
-    use WGDev::Command;
-    return WGDev::Command->command_list;
-}
-
-sub wgd_cmd {
-    my ( $self, $cmd ) = @_;
-
-    my $main = Padre->ide->wx->main;
-    my $options = $main->prompt( "$cmd options", "wgd $cmd", "wgd_${cmd}_options" );
-    if ( defined $options ) {
-        $self->wgd("$cmd $options");
-    }
-    return;
-}
-
-sub wgd {
-    my ( $self, $cmd ) = @_;
-    my $main = Padre->ide->wx->main;
-    local $ENV{WEBGUI_ROOT}   = '/data/WebGUI';
-    local $ENV{WEBGUI_CONFIG} = 'dev.localhost.localdomain.conf';
-    local $ENV{EDITOR}        = '/usr/local/bin/padre';
-
-    #    $main->run_command( qq(/data/wre/prereqs/bin/perl /data/wre/prereqs/bin/wgd $cmd) );
-    $main->run_command(qq(wgd $cmd));
-}
-
 sub show_about {
     my $self = shift;
 
@@ -169,8 +182,8 @@ sub show_about {
     my $about = Wx::AboutDialogInfo->new;
     $about->SetName("Padre::Plugin::WebGUI");
     $about->SetDescription( <<"END_MESSAGE" );
-WebGUI developer tools for Padre
-http://webgui.org
+WebGUI Plugin for Padre
+http://patspam.com
 END_MESSAGE
     $about->SetVersion($VERSION);
 
@@ -178,6 +191,42 @@ END_MESSAGE
     Wx::AboutBox($about);
 
     return;
+}
+
+sub ping {1}
+
+# toggle_asset_tree
+# Toggle the asset tree panel on/off
+# N.B. The checkbox gets checked *before* this method runs
+sub toggle_asset_tree {
+    my $self = shift;
+
+    return unless $self->ping;
+
+    my $asset_tree = $self->asset_tree;
+    if ( $self->{asset_tree_toggle}->IsChecked ) {
+        $self->main->right->show($asset_tree);
+        $asset_tree->update_gui;
+        $self->config_write( { %{ $self->config_read }, show_asset_tree => 1 } );
+    }
+    else {
+        $self->main->right->hide($asset_tree);
+        $self->config_write( { %{ $self->config_read }, show_asset_tree => 0 } );
+    }
+
+    $self->main->aui->Update;
+    $self->ide->save_config;
+
+    return;
+}
+
+sub asset_tree {
+    my $self = shift;
+
+    if ( !$self->{asset_tree} ) {
+        $self->{asset_tree} = Padre::Plugin::WebGUI::Assets->new($self);
+    }
+    return $self->{asset_tree};
 }
 
 =head1 AUTHOR
@@ -222,7 +271,6 @@ L<http://search.cpan.org/dist/Padre-Plugin-WebGUI/>
 =head1 SEE ALSO
 
 WebGUI - http://webgui.org
-WGDev  - http://github.com/haarg/wgdev
 
 =head1 COPYRIGHT & LICENSE
 

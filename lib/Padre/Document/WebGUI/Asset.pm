@@ -3,8 +3,10 @@ package Padre::Document::WebGUI::Asset;
 use 5.008;
 use strict;
 use warnings;
-use Padre::Document ();
+
 use Carp;
+use Padre::Debug;
+use Padre::Document ();
 
 our @ISA = 'Padre::Document';
 
@@ -18,6 +20,7 @@ sub basename     { $_[0]->filename }
 sub dirname      { $_[0]->basename }
 sub time_on_file { $_[0]->asset->{revisionDate} }
 sub load_file    { $_[0]->load_asset }
+sub is_new       { 0 }
 
 # Override this to change the highlighter/lexer
 sub lexer { Padre::MimeTypes->get_lexer('text/html') }
@@ -25,10 +28,10 @@ sub lexer { Padre::MimeTypes->get_lexer('text/html') }
 sub load_asset {
     my ( $self, $assetId, $url ) = @_;
 
-    Padre::Util::debug( "Loading asset $assetId from $url with mimetype " . $self->get_mimetype );
+    TRACE( "Loading asset $assetId from $url with mimetype " . $self->get_mimetype ) if DEBUG;
 
     # TODO: Investigate whether we should actually subclass Padre::File rather than faking it
-    $self->{file} = 1;
+#    $self->{file} = {};
 
     $self->{url} = $url;
 
@@ -36,7 +39,7 @@ sub load_asset {
     use LWP::UserAgent;
     my $ua  = LWP::UserAgent->new;
     my $get = "$url?op=padre&func=edit&assetId=$assetId";
-    Padre::Util::debug("GET: $get");
+    TRACE("GET: $get") if DEBUG;
     my $response = $ua->get($get);
     unless ( $response->header('Padre-Plugin-WebGUI') ) {
         my $error = "The server does not appear to have the Padre::Plugin::WebGUI content handler installed";
@@ -65,7 +68,7 @@ sub save_file {
     # Two saves in the same second will cause asset->addRevision to explode
     return 1 if $self->last_sync && $self->last_sync == time;
 
-    Padre::Util::debug("Saving asset $asset->{assetId}");
+    TRACE("Saving asset $asset->{assetId}") if DEBUG;
 
     # Put editor text back into asset hash
     $self->set_asset_content;
@@ -99,12 +102,12 @@ sub process_response {
     my $self    = shift;
     my $content = shift;
 
-    # Padre::Util::debug($content);
+    # TRACE($content) if DEBUG;
 
     use JSON;
     my $asset = eval { from_json($content) };
     if ($@) {
-        Padre::Util::debug($@);
+        TRACE($@) if DEBUG;
         my $error = "The server sent an invalid response, please try again (and check the logs)";
         $self->set_errstr($error);
         $self->editor->main->error($error);

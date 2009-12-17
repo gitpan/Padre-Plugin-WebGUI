@@ -3,7 +3,9 @@ package Padre::Plugin::WebGUI;
 use 5.008;
 use strict;
 use warnings;
+
 use base 'Padre::Plugin';
+use Padre::Debug;
 use Padre::Util ('_T');
 use Padre::Plugin::WebGUI::Assets;
 
@@ -17,7 +19,7 @@ Version 0.03
 
 =cut
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 =head1 SYNOPSIS
 
@@ -70,7 +72,7 @@ sub plugin_directory_share {
 sub plugin_enable {
     my $self = shift;
 
-    Padre::Util::debug('Enabling Padre::Plugin::WebGUI');
+    TRACE('Enabling Padre::Plugin::WebGUI') if DEBUG;
 
     # workaround Padre bug
     my %registered_documents = $self->registered_documents;
@@ -91,7 +93,7 @@ sub plugin_enable {
 sub plugin_disable {
     my $self = shift;
 
-    Padre::Util::debug('Disabling Padre::Plugin::WebGUI');
+    TRACE('Disabling Padre::Plugin::WebGUI') if DEBUG;
 
     if ( my $asset_tree = $self->{asset_tree} ) {
         $self->main->right->hide($asset_tree);
@@ -119,11 +121,12 @@ sub menu_plugins {
     Wx::Event::EVT_MENU( $main, $self->{asset_tree_toggle}, sub { $self->toggle_asset_tree } );
 
     # Turn on Asset Tree as soon as Plugin is enabled
-    # Todo - find a better place to put this
-    if ( $self->config_read->{show_asset_tree} ) {
-        $self->{asset_tree_toggle}->Check(1);
-        $self->toggle_asset_tree;
-    }
+    # Disabled - we can't have this here because menu_plugins is called repeatedly
+#    if ( $self->config_read->{show_asset_tree} ) {
+#        $self->{asset_tree_toggle}->Check(1);
+#        
+#        $self->toggle_asset_tree;
+#    }
 
     # Online Resources
     my $resources_submenu = Wx::Menu->new;

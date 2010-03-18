@@ -5,7 +5,7 @@ use strict;
 use warnings;
 
 use base 'Padre::Plugin';
-use Padre::Debug;
+use Padre::Logger;
 use Padre::Util ('_T');
 use Padre::Plugin::WebGUI::Assets;
 
@@ -19,7 +19,7 @@ Version 0.03
 
 =cut
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 =head1 SYNOPSIS
 

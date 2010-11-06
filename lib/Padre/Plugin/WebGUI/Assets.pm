@@ -1,13 +1,17 @@
 package Padre::Plugin::WebGUI::Assets;
+BEGIN {
+  $Padre::Plugin::WebGUI::Assets::VERSION = '1.001';
+}
 
-use 5.008;
+# ABSTRACT: WebGUI Asset Tree
+
 use strict;
 use warnings;
 
 use Padre::Current ();
 use Padre::Logger;
-use Padre::Util    ();
-use Padre::Wx      ();
+use Padre::Util ();
+use Padre::Wx   ();
 
 use base 'Wx::TreeCtrl';
 
@@ -18,7 +22,7 @@ use Class::XSAccessor getters => {
     url       => 'url',
 };
 
-# constructor
+
 sub new {
     my $class  = shift;
     my $plugin = shift;
@@ -46,11 +50,18 @@ sub new {
     return $self;
 }
 
-# accessors
-sub right         { $_[0]->GetParent }
-sub main          { $_[0]->GetGrandParent }
+
+sub right { $_[0]->GetParent }
+
+
+sub main { $_[0]->GetGrandParent }
+
+
 sub gettext_label { Wx::gettext('Asset Tree') }
-sub clear         { $_[0]->DeleteAllItems }
+
+
+sub clear { $_[0]->DeleteAllItems }
+
 
 sub update_gui {
     my $self = shift;
@@ -61,6 +72,7 @@ sub update_gui {
         $self->update_gui_disconnected;
     }
 }
+
 
 sub update_gui_disconnected {
     my $self = shift;
@@ -78,6 +90,7 @@ sub update_gui_disconnected {
 
     $self->Thaw;
 }
+
 
 sub update_gui_connected {
     my $self = shift;
@@ -126,8 +139,7 @@ sub update_gui_connected {
     }
 }
 
-# generate the list of assets
-# todo - make this lazy-load for better performance
+
 sub build_asset_tree {
     my $self = shift;
 
@@ -136,8 +148,7 @@ sub build_asset_tree {
     my $ua       = LWP::UserAgent->new;
     my $response = $ua->get( $self->url . '?op=padre&func=list' );
     unless ( $response->header('Padre-Plugin-WebGUI') ) {
-        $self->main->error(
-            "The server does not appear to have the Padre::Plugin::WebGUI content handler installed");
+        $self->main->error("The server does not appear to have the Padre::Plugin::WebGUI content handler installed");
         return;
     }
     if ( !$response->is_success ) {
@@ -160,6 +171,7 @@ sub build_asset_tree {
         return $assets;
     }
 }
+
 
 sub edit_asset {
     my $self = shift;
@@ -195,14 +207,15 @@ sub edit_asset {
     my $id   = $main->find_id_of_editor($editor);
     my $page = $main->notebook->GetPage($id);
     $page->SetSavePoint;
-    
+
     # Set tab icon
-    if (my $icon = $self->get_item_icon( $item->{icon} )) {
-        $main->notebook->SetPageBitmap($id, $icon);
+    if ( my $icon = $self->get_item_icon( $item->{icon} ) ) {
+        $main->notebook->SetPageBitmap( $id, $icon );
     }
-    
+
     $main->refresh;
 }
+
 
 sub on_tree_item_right_click {
     my ( $self, $event ) = @_;
@@ -242,7 +255,7 @@ sub on_tree_item_right_click {
     return;
 }
 
-# event handler for item activation
+
 sub on_tree_item_activated {
     my ( $self, $event, $opts ) = @_;
     $opts ||= {};
@@ -252,9 +265,8 @@ sub on_tree_item_activated {
     return if not defined $item;
 
     if ( $item->{connect} ) {
-        my $url
-            = $self->main->prompt(
-            'Enter a URL to connect to, for example: http://admin:123qwe@dev.localhost.localdomain',
+        my $url =
+          $self->main->prompt( 'Enter a URL to connect to, for example: http://admin:123qwe@dev.localhost.localdomain',
             'Connect To Server', 'wg_url' );
         return unless $url;
         $self->{url} = $url;
@@ -286,6 +298,7 @@ sub on_tree_item_activated {
 
 my $image_lookup;
 
+
 sub get_item_image {
     my $self = shift;
     my $icon = shift;
@@ -293,21 +306,21 @@ sub get_item_image {
     $icon =~ s{.*/}{};
     my $imglist = $self->GetImageList;
     if ( !$image_lookup->{$icon} ) {
-        my $index
-            = $imglist->Add(
-            Wx::Bitmap->new( $self->plugin->plugin_directory_share . "/icons/16x16/$icon", Wx::wxBITMAP_TYPE_GIF )
-            );
+        my $index = $imglist->Add(
+            Wx::Bitmap->new( $self->plugin->plugin_directory_share . "/icons/16x16/$icon", Wx::wxBITMAP_TYPE_GIF ) );
         $image_lookup->{$icon} = $index;
     }
     return $image_lookup->{$icon} || 0;
 }
 
+
 sub get_item_icon {
-    my $self = shift;
-    my $icon = shift;
-    my $index = $self->get_item_image( $icon );
-    return $self->GetImageList->GetIcon( $index );
+    my $self  = shift;
+    my $icon  = shift;
+    my $index = $self->get_item_image($icon);
+    return $self->GetImageList->GetIcon($index);
 }
+
 
 sub update_treectrl {
     my ( $self, $items, $parent ) = @_;
@@ -324,9 +337,91 @@ sub update_treectrl {
     return;
 }
 
+
 1;
 
-# Copyright 2009 Patrick Donelan
-# LICENSE
-# This program is free software; you can redistribute it and/or
-# modify it under the same terms as Perl 5 itself.
+__END__
+=pod
+
+=head1 NAME
+
+Padre::Plugin::WebGUI::Assets - WebGUI Asset Tree
+
+=head1 VERSION
+
+version 1.001
+
+=head1 METHODS
+
+=head2 plugin
+
+Accessor
+
+=head2 connected
+
+Accessor
+
+=head2 url
+
+Accessor
+
+=head2 new
+
+constructor
+
+=head2 right
+
+Accessor
+
+=head2 main
+
+Accessor
+
+=head2 gettext_label
+
+Accessor
+
+=head2 clear
+
+Accessor
+
+=head2 update_gui
+
+=head2 update_gui_disconnected
+
+=head2 update_gui_connected
+
+=head2 build_asset_tree
+
+generate the list of assets
+todo - make this lazy-load for better performance
+
+=head2 edit_asset
+
+=head2 on_tree_item_right_click
+
+=head2 on_tree_item_activated
+
+event handler for item activation
+
+=head2 get_item_image
+
+=head2 get_item_icon
+
+=head2 update_treectrl
+
+=head2 TRACE
+
+=head1 AUTHOR
+
+Patrick Donelan <pdonelan@cpan.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2010 by Patrick Donelan.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut
+

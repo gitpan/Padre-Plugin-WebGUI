@@ -1,42 +1,52 @@
-Padre-Plugin-WebGUI
+NAME
+    Padre::Plugin::WebGUI - Developer tools for WebGUI
 
-Developer tools for WebGUI
+VERSION
+    version 1.001
 
-This plugin adds a "WebGUI" item to the Padre plugin menu, with a bunch of WebGUI-oriented features.
+SYNOPSIS
+    cpan install Padre::Plugin::WebGUI;
 
-To install this module, run the following commands:
+    Then use it via Padre, The Perl IDE.
 
-	perl Makefile.PL
-	make
-	make test
-	make install
+DESCRIPTION
+    This plugin adds a "WebGUI" item to the Padre plugin menu, with a bunch
+    of WebGUI-oriented features.
 
-SUPPORT AND DOCUMENTATION
+METHODS
+  plugin_name
+    The plugin name to show in the Plugin Manager and menus
 
-After installing, you can find documentation for this module with the
-perldoc command.
+  padre_interfaces
+    Declare the Padre interfaces this plugin uses
 
-    perldoc Padre::Plugin::WebGUI
+  registered_documents
+    Register the document types that we want to handle
 
-You can also look for information at:
+  plugin_directory_share
+  plugin_enable
+    called when the plugin is enabled
 
-    RT, CPAN's request tracker
-        http://rt.cpan.org/NoAuth/Bugs.html?Dist=Padre-Plugin-WebGUI
+  plugin_disable
+  menu_plugins
+  online_resources
+  show_about
+  ping
+  toggle_asset_tree
+    Toggle the asset tree panel on/off N.B. The checkbox gets checked
+    *before* this method runs
 
-    AnnoCPAN, Annotated CPAN documentation
-        http://annocpan.org/dist/Padre-Plugin-WebGUI
+  asset_tree
+  TRACE
+SEE ALSO
+    WebGUI - http://webgui.org
 
-    CPAN Ratings
-        http://cpanratings.perl.org/d/Padre-Plugin-WebGUI
+AUTHOR
+    Patrick Donelan <pdonelan@cpan.org>
 
-    Search CPAN
-        http://search.cpan.org/dist/Padre-Plugin-WebGUI/
+COPYRIGHT AND LICENSE
+    This software is copyright (c) 2010 by Patrick Donelan.
 
-
-COPYRIGHT AND LICENCE
-
-Copyright (C) 2009 Patrick Donelan
-
-This program is free software; you can redistribute it and/or modify it
-under the same terms as Perl itself.
+    This is free software; you can redistribute it and/or modify it under
+    the same terms as the Perl 5 programming language system itself.
 

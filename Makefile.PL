@@ -1,17 +1,73 @@
-use inc::Module::Install;
 
-name 'Padre-Plugin-WebGUI';
-all_from 'lib/Padre/Plugin/WebGUI.pm';
-author 'Patrick Donelan <pat@patspam.com>';
-license 'perl';
-requires 'Padre' => '0.69';
-requires 'LWP::UserAgent';
-requires 'JSON';
-test_requires 'Test::More';
-recommends 'JSON::XS' => '2.24';
+use strict;
+use warnings;
 
-install_share('share');
+BEGIN { require 5.006; }
 
-auto_install;
+use ExtUtils::MakeMaker 6.31;
 
-WriteAll;
+use File::ShareDir::Install;
+install_share dist => "share";
+
+
+my %WriteMakefileArgs = (
+  'ABSTRACT' => 'Developer tools for WebGUI',
+  'AUTHOR' => 'Patrick Donelan <pdonelan@cpan.org>',
+  'BUILD_REQUIRES' => {
+    'File::Find' => '0',
+    'File::Temp' => '0',
+    'Test::More' => '0'
+  },
+  'CONFIGURE_REQUIRES' => {
+    'ExtUtils::MakeMaker' => '6.31',
+    'File::ShareDir::Install' => '0.03'
+  },
+  'DISTNAME' => 'Padre-Plugin-WebGUI',
+  'EXE_FILES' => [],
+  'LICENSE' => 'perl',
+  'NAME' => 'Padre::Plugin::WebGUI',
+  'PREREQ_PM' => {
+    'Carp' => '0',
+    'Class::Unload' => '0',
+    'Class::XSAccessor' => '0',
+    'JSON' => '0',
+    'LWP::UserAgent' => '0',
+    'Padre' => '0.69',
+    'Padre::Current' => '0',
+    'Padre::Document' => '0',
+    'Padre::Locale' => '0',
+    'Padre::Logger' => '0',
+    'Padre::Plugin' => '0',
+    'Padre::Util' => '0',
+    'Padre::Wx' => '0'
+  },
+  'VERSION' => '1.001',
+  'test' => {
+    'TESTS' => 't/*.t'
+  }
+);
+
+
+unless ( eval { ExtUtils::MakeMaker->VERSION(6.56) } ) {
+  my $br = delete $WriteMakefileArgs{BUILD_REQUIRES};
+  my $pp = $WriteMakefileArgs{PREREQ_PM};
+  for my $mod ( keys %$br ) {
+    if ( exists $pp->{$mod} ) {
+      $pp->{$mod} = $br->{$mod} if $br->{$mod} > $pp->{$mod};
+    }
+    else {
+      $pp->{$mod} = $br->{$mod};
+    }
+  }
+}
+
+delete $WriteMakefileArgs{CONFIGURE_REQUIRES}
+  unless eval { ExtUtils::MakeMaker->VERSION(6.52) };
+
+WriteMakefile(%WriteMakefileArgs);
+
+package
+MY;
+use File::ShareDir::Install qw(postamble);
+
+

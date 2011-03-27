@@ -38,7 +38,8 @@
             "Padre::Plugin" : 0,
             "Padre::Util" : 0,
             "Padre::Wx" : 0,
-            "perl" : "5.006"
+            "perl" : "5.008",
+            "utf8" : 0
          }
       },
       "test" : {
@@ -54,14 +55,14 @@
       "bugtracker" : {
          "web" : "http://github.com/pdonelan/Padre-Plugin-WebGUI/issues"
       },
-      "homepage" : "https://github.com/pdonelan/Padre-Plugin-WebGUI/tree",
+      "homepage" : "http://github.com/pdonelan/Padre-Plugin-WebGUI/tree",
       "repository" : {
          "type" : "git",
-         "url" : "https://github.com/pdonelan/Padre-Plugin-WebGUI.git",
-         "web" : "https://github.com/pdonelan/Padre-Plugin-WebGUI/tree"
+         "url" : "git://github.com/pdonelan/Padre-Plugin-WebGUI.git",
+         "web" : "http://github.com/pdonelan/Padre-Plugin-WebGUI/tree"
       }
    },
-   "version" : "1.001",
+   "version" : "1.002",
    "x_Dist_Zilla" : {
       "plugins" : [
          {

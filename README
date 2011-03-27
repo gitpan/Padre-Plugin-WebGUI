@@ -2,7 +2,7 @@ NAME
     Padre::Plugin::WebGUI - Developer tools for WebGUI
 
 VERSION
-    version 1.001
+    version 1.002
 
 SYNOPSIS
     cpan install Padre::Plugin::WebGUI;
@@ -45,7 +45,7 @@ AUTHOR
     Patrick Donelan <pdonelan@cpan.org>
 
 COPYRIGHT AND LICENSE
-    This software is copyright (c) 2010 by Patrick Donelan.
+    This software is copyright (c) 2011 by Patrick Donelan.
 
     This is free software; you can redistribute it and/or modify it under
     the same terms as the Perl 5 programming language system itself.

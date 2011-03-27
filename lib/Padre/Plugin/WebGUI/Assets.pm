@@ -1,6 +1,6 @@
 package Padre::Plugin::WebGUI::Assets;
 BEGIN {
-  $Padre::Plugin::WebGUI::Assets::VERSION = '1.001';
+  $Padre::Plugin::WebGUI::Assets::VERSION = '1.002';
 }
 
 # ABSTRACT: WebGUI Asset Tree
@@ -349,7 +349,7 @@ Padre::Plugin::WebGUI::Assets - WebGUI Asset Tree
 
 =head1 VERSION
 
-version 1.001
+version 1.002
 
 =head1 METHODS
 
@@ -418,7 +418,7 @@ Patrick Donelan <pdonelan@cpan.org>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2010 by Patrick Donelan.
+This software is copyright (c) 2011 by Patrick Donelan.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.

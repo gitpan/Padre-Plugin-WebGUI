@@ -1,6 +1,6 @@
 package Padre::Plugin::WebGUI;
 BEGIN {
-  $Padre::Plugin::WebGUI::VERSION = '1.001';
+  $Padre::Plugin::WebGUI::VERSION = '1.002';
 }
 
 # ABSTRACT: Developer tools for WebGUI
@@ -238,7 +238,7 @@ Padre::Plugin::WebGUI - Developer tools for WebGUI
 
 =head1 VERSION
 
-version 1.001
+version 1.002
 
 =head1 SYNOPSIS
 
@@ -299,7 +299,7 @@ Patrick Donelan <pdonelan@cpan.org>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2010 by Patrick Donelan.
+This software is copyright (c) 2011 by Patrick Donelan.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.

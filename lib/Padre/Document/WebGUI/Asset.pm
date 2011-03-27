@@ -1,6 +1,6 @@
 package Padre::Document::WebGUI::Asset;
 BEGIN {
-  $Padre::Document::WebGUI::Asset::VERSION = '1.001';
+  $Padre::Document::WebGUI::Asset::VERSION = '1.002';
 }
 
 # ABSTRACT: Padre::Document subclass representing a WebGUI Asset
@@ -163,9 +163,19 @@ sub render {
     my $text = $self->get_asset_content || q{};
 
     require Padre::Locale;
+    require utf8;
     $self->{encoding} = Padre::Locale::encoding_from_string($text);
-    $text = Encode::decode( $self->{encoding}, $text );
-
+    if ( not utf8::is_utf8( $text ) ) {
+        my $decoded = eval {  Encode::decode( $self->{encoding}, $text ) };
+        if ( $@ ) {
+            my $error = "Error decoding server response.";
+            $self->set_errstr( $error );
+            $self->editor->main->error( $error );
+        }
+        else {
+            $text = $decoded;
+        }
+    }
     $self->text_set($text);
     $self->{original_content} = $self->text_get;
     $self->colourize;
@@ -183,7 +193,7 @@ Padre::Document::WebGUI::Asset - Padre::Document subclass representing a WebGUI 
 
 =head1 VERSION
 
-version 1.001
+version 1.002
 
 =head1 METHODS
 
@@ -248,7 +258,7 @@ Patrick Donelan <pdonelan@cpan.org>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2010 by Patrick Donelan.
+This software is copyright (c) 2011 by Patrick Donelan.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
